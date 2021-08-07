@@ -252,19 +252,40 @@ class Multiselect extends Field
         return $this;
     }
 
+    /**
+     * @param $async
+     * @param $resourceClass
+     * @param $inputModels
+     * @param $value
+     * @return Collection
+     */
+    private function decideModels($async, $resourceClass, $inputModels, $value)
+    {
+        if ($async) {
+            return $value;
+        }
+
+        if ($inputModels instanceof Collection) {
+            return $inputModels;
+        }
+
+        return $resourceClass::newModel()::all();
+    }
 
     /**
      * Makes the field to manage a BelongsToMany relationship.
      *
      * @param string $resourceClass The Nova Resource class for the other model.
+     * @param bool $async
+     * @param string $inputModels Use inout models if in need to restrict access to all relatable models
      * @return \OptimistDigital\MultiselectField\Multiselect
-     **/
-    public function belongsToMany($resourceClass, $async = true)
+     */
+    public function belongsToMany($resourceClass, $async = true, $inputModels = '')
     {
-        $this->resolveUsing(function ($value) use ($async, $resourceClass) {
+        $this->resolveUsing(function ($value) use ($async, $resourceClass, $inputModels) {
             if ($async) $this->asyncResource($resourceClass);
 
-            $models = $async ? $value : $resourceClass::newModel()::all();
+            $models = $this->decideModels($async, $resourceClass, $inputModels, $value);
 
             $this->setOptionsFromModels($models, $resourceClass);
 
